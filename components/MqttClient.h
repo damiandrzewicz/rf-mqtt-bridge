@@ -1,6 +1,7 @@
 #pragma once
 
-#include "esphome.h"
+#include <esphome.h>
+#include <ArduinoJson.h>
 
 #include "Payload.h"
 #include "PayloadStorage.h"
@@ -15,8 +16,7 @@ public:
 
     void setup() override{
         ESP_LOGD(__FUNCTION__, "Starting [MqttDispatcher]...");
-        subscribe("test/message", &MqttClient::on_test_message);
-        subscribe_json("test/json_message", &MqttClient::on_test_json_message);
+        subscribe_json(build_topic_command(), &MqttClient::on_command);
     }
 
     void loop() override{
@@ -26,30 +26,55 @@ public:
             ESP_LOGD(__FUNCTION__, "storage before: %d", _payload_storage->get_incoming_messages_queue().count());
             Payload p = _payload_storage->get_incoming_messages_queue().pop();
             publish(
-                buildTopic(p.get_sender_id()), 
-                p.get_raw());
+                build_topic_state(p.get_sender_id()), 
+                build_payload_state(p));
             ESP_LOGD(__FUNCTION__, "storage after: %d", _payload_storage->get_incoming_messages_queue().count());
         }
     }
 
-    std::string buildTopic(const uint16_t sender_id) const {
-        return _topic_base + esphome::to_string(sender_id);
+    std::string build_topic_state(const uint16_t sender_id) const {
+        return _topic_base + "/" + _topic_state + "/" + esphome::to_string(sender_id);
     }
 
-    void on_test_message(const std::string &payload){
-        ESP_LOGD(__FUNCTION__, "Received test message: [%s]", payload.c_str());
+    std::string build_payload_state(const Payload &p){
+        StaticJsonBuffer<200> jsonBuffer;
+        JsonObject& root = jsonBuffer.createObject();
+        root["senderId"] = p.get_sender_id();
+        root["rssi"] = p.get_rssi();
+        root["rawLen"] = p.get_raw().length();
+        root["raw"] = p.get_raw();
+        
+        std::string buffer;
+        root.printTo(buffer);
+        return buffer;
     }
 
-    void on_test_json_message(JsonObject &root){
-        if (!root.containsKey("key"))
-            return;
+    std::string build_topic_command() const {
+        return _topic_base + "/" + _topic_command + "/+";
+    }
 
-        int value = root["key"];
-        ESP_LOGD(__FUNCTION__, "Received test JSON message: [key]=[%d]", value);
+    void set_topic_base(const std::string &base){
+        this->_topic_base = base;
+    }
+
+    void set_topic_state(const std::string &state){
+        this->_topic_state = state;
+    }
+
+    void set_topic_command(const std::string &command){
+        this->_topic_command = command;
+    }
+
+    void on_command(const std::string &topic, JsonObject &root){
+        std::string payload;
+        root.printTo(payload);
+        ESP_LOGD(__FUNCTION__, "Received JSON message: topic=[%s], payload=[%s]", topic.c_str(), payload.c_str());
     }
 
 private:
     PayloadStorage *_payload_storage = nullptr;
 
-    const std::string _topic_base = "rf868_bridge/data/";
+    std::string _topic_base = "rf868_bridge";
+    std::string _topic_state = "state";
+    std::string _topic_command = "command";
 };
