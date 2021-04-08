@@ -1,0 +1,53 @@
+esphome:
+  name: rf868_bridge_esp32
+  platform: ESP32
+  board: esp32doit-devkit-v1
+  includes:
+    - components/Queue.h
+    - components/Payload.h
+    - components/PayloadStorage.h
+    - components/RFM69Manager.h
+    - components/MqttClient.h
+  libraries:
+    - lowpowerlab/RFM69
+  platformio_options:
+    upload_speed: 256000
+
+wifi:
+  ssid: "villibridge11"
+  password: "G6D3TgLA"
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Rf433 Bridge Fallback Hotspot"
+    password: "q4beDhmct6oK"
+
+captive_portal:
+
+# Enable logging
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+#api:
+
+mqtt:
+  broker: 192.168.1.25
+  username: airvillihomemqtt
+  password: G6D3TgLA
+  id: mqtt_client
+
+ota:
+
+custom_component:
+- lambda: |-
+    auto payload_storage = new PayloadStorage();
+    App.register_component(payload_storage);
+
+    auto rfm69_manager = new RFM69Manager(payload_storage);
+    App.register_component(rfm69_manager);
+
+    auto mqtt_client = new MqttClient(payload_storage);
+    App.register_component(mqtt_client);
+
+    return {{payload_storage, rfm69_manager, mqtt_client}};
