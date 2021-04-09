@@ -3,6 +3,8 @@ esphome:
   platform: ESP32
   board: esp32doit-devkit-v1
   includes:
+    - components/Settings.h
+    - components/Credentials.h
     - components/Queue.h
     - components/Payload.h
     - components/PayloadStorage.h

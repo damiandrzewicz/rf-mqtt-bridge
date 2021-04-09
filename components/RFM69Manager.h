@@ -6,27 +6,8 @@
 #include <SPI.h> // Not actually used but needed to compile
 #include "Payload.h"
 #include "PayloadStorage.h"
-
-//** Configuration */
-
-
-//*********************************************************************************************
-//************ IMPORTANT SETTINGS - YOU MUST CHANGE/CONFIGURE TO FIT YOUR HARDWARE *************
-//*********************************************************************************************
-#define NODEID        1    //should always be 1 for a Gateway
-#define NETWORKID     100  //the same on all nodes that talk to each other
-//Match frequency to the hardware version of the radio on your Moteino (uncomment one):
-#define FREQUENCY     RF69_868MHZ
-#define ENCRYPTKEY    "sampleEncryptKey" //exactly the same 16 characters/bytes on all nodes!
-#define IS_RFM69HW_HCW  //uncomment only for RFM69HW/HCW! Leave out if you have RFM69W/CW!
-//*********************************************************************************************
-//Auto Transmission Control - dials down transmit power to save battery
-//Usually you do not need to always transmit at max output power
-//By reducing TX power even a little you save a significant amount of battery power
-//This setting enables this gateway to work with remote nodes that have ATC enabled to
-//dial their power down to only the required level
-#define ENABLE_ATC    //comment out this line to disable AUTO TRANSMISSION CONTROL
-//*********************************************************************************************
+#include "Settings.h"
+#include "Credentials.h"
 
 class RFM69Manager : public Component {
  public:
