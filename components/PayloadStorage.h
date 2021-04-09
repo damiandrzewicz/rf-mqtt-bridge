@@ -6,14 +6,18 @@
 
 class PayloadStorage : public Component{
 public:
-    PayloadStorage(){
+    PayloadStorage() : _incoming_messages(10), _outcoming_messages(10){
     }
 
     Queue<Payload> &get_incoming_messages_queue(){
         return _incoming_messages;
     }
 
+    Queue<Payload> &get_outcoming_messages_queue(){
+        return _outcoming_messages;
+    }
 
 private:
     Queue<Payload> _incoming_messages;
+    Queue<Payload> _outcoming_messages;
 };

@@ -48,38 +48,51 @@ class RFM69Manager : public Component {
   }
   void loop() override {
     receive();
+    send();
     
   }
 
   void receive(){
-    if (_radio.receiveDone())
+    while (_radio.receiveDone())
     {
       Payload payload(reinterpret_cast<char*>(_radio.DATA), _radio.SENDERID, _radio.RSSI);
       _packetCount++;
 
       ESP_LOGI(__FUNCTION__, "Received: [%d][%d][%d][RX_RSSI:%d] - [%s]", 
         _packetCount, 
-        payload.get_sender_id(), 
+        payload.get_device_id(), 
         _radio.DATALEN, 
         payload.get_rssi(), 
         payload.get_raw().c_str()
-        );
+      );
 
       // Append payload to queue
       _payload_storage->get_incoming_messages_queue().push(payload);
-      
+
       if (_radio.ACKRequested())
       {
         _radio.sendACK();
         ESP_LOGI(__FUNCTION__, "ACK sent");
       }
+
+      blink();
     }
   }
 
   void send(){
     // Check if new message in queue
-    //const auto Payload &&p = _get_from_outcoming_queue();
-    //ESP_LOGD(__FUNCTION__ "Sending to ")
+    if(!_payload_storage->get_outcoming_messages_queue().empty()){
+      Payload p = _payload_storage->get_outcoming_messages_queue().pop();
+
+      ESP_LOGD(__FUNCTION__, "Sending payload=[%s] to targed id=[%d]", p.get_raw().c_str(), p.get_device_id());
+      if(_radio.sendWithRetry(p.get_device_id(), p.get_raw().c_str(), 8)){
+        ESP_LOGI(__FUNCTION__, "Sent OK!");
+      } else {
+        ESP_LOGW(__FUNCTION__, "Sent FAILED!");
+      }
+
+      blink();
+    }
   }
 
   void blink()

@@ -1,5 +1,5 @@
 esphome:
-  name: rf868_bridge_esp32
+  name: rf_mqtt_bridge_iot
   platform: ESP32
   board: esp32doit-devkit-v1
   includes:
@@ -14,8 +14,8 @@ esphome:
     upload_speed: 256000
 
 wifi:
-  ssid: "villibridge11"
-  password: "G6D3TgLA"
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
 
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
@@ -33,8 +33,8 @@ logger:
 
 mqtt:
   broker: 192.168.1.25
-  username: airvillihomemqtt
-  password: G6D3TgLA
+  username: !secret mqtt_username
+  password: !secret mqtt_password
   id: mqtt_client
 
 ota:

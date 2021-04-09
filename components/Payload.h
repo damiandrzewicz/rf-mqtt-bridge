@@ -8,9 +8,9 @@ public:
 
     Payload(){}
 
-    Payload(const std::string &raw, uint16_t sender_id, int16_t rssi){
+    Payload(const std::string &raw, uint16_t device_id, int16_t rssi){
         set_raw(raw);
-        set_sender_id(sender_id);
+        set_device_id(device_id);
         set_rssi(rssi);
     }
 
@@ -22,12 +22,12 @@ public:
         return this->_raw;
     } 
 
-    void set_sender_id(uint16_t sender_id){
-        this->_sener_id = sender_id;
+    void set_device_id(uint16_t device_id){
+        this->_device_id = device_id;
     }
 
-    uint16_t get_sender_id() const {
-        return this->_sener_id;
+    uint16_t get_device_id() const {
+        return this->_device_id;
     } 
 
     void set_rssi(int16_t rssi){
@@ -39,6 +39,6 @@ public:
     } 
 private:
     std::string _raw;
-    uint16_t _sener_id;
+    uint16_t _device_id;
     int16_t _rssi;
 };
