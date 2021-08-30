@@ -8,12 +8,17 @@
 #include "PayloadStorage.h"
 #include "Settings.h"
 #include "Credentials.h"
+#include <functional>
 
 class RFM69Manager : public Component {
  public:
 
-  RFM69Manager(PayloadStorage *payload_storage) : _radio(_SPI_CS, _IRQ_PIN) {
-    this->_payload_storage = payload_storage;
+  RFM69Manager(/*PayloadStorage *payload_storage*/) : _radio(_SPI_CS, _IRQ_PIN) {
+    //this->_payload_storage = payload_storage;
+  }
+
+  void setMqttSender(std::function<void(const Payload&)> ptr){
+    this->mqttsender = ptr;
   }
 
   void setup() override {
@@ -29,8 +34,7 @@ class RFM69Manager : public Component {
   }
   void loop() override {
     receive();
-    send();
-    
+    //send();
   }
 
   void receive(){
@@ -47,8 +51,10 @@ class RFM69Manager : public Component {
         payload.get_raw().c_str()
       );
 
+      mqttsender(payload);
+
       // Append payload to queue
-      _payload_storage->get_incoming_messages_queue().push(payload);
+      //_payload_storage->get_incoming_messages_queue().push(payload);
 
       if (_radio.ACKRequested())
       {
@@ -60,10 +66,10 @@ class RFM69Manager : public Component {
     }
   }
 
-  void send(){
+  void send(const Payload &p){
     // Check if new message in queue
-    if(!_payload_storage->get_outcoming_messages_queue().empty()){
-      Payload p = _payload_storage->get_outcoming_messages_queue().pop();
+    //if(!_payload_storage->get_outcoming_messages_queue().empty()){
+      //ayload p = _payload_storage->get_outcoming_messages_queue().pop();
 
       ESP_LOGD(__FUNCTION__, "Sending payload=[%s] to targed id=[%d]", p.get_raw().c_str(), p.get_device_id());
       if(_radio.sendWithRetry(p.get_device_id(), p.get_raw().c_str(), 8)){
@@ -73,7 +79,7 @@ class RFM69Manager : public Component {
       }
 
       blink();
-    }
+    //}
   }
 
   void blink()
@@ -97,6 +103,7 @@ private:
   static const constexpr int _SPI_CS = RF69_SPI_CS;
   static const constexpr int _IRQ_PIN = 4;
   
-
-  PayloadStorage *_payload_storage = nullptr;
+  std::function<void(const Payload&)> mqttsender = nullptr;
+  //PayloadStorage *_payload_storage = nullptr;
 };
+

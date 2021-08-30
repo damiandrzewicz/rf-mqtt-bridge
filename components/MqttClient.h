@@ -10,8 +10,12 @@
 class MqttClient : public Component, public CustomMQTTDevice{
 public:
 
-    MqttClient(PayloadStorage *payload_storage){
-        this->_payload_storage = payload_storage;
+    MqttClient(/*PayloadStorage *payload_storage*/){
+        //this->_payload_storage = payload_storage;
+    }
+
+    void setRfm69Sender(std::function<void(const Payload&)> ptr){
+        this->rfm69sender = ptr;
     }
 
     void setup() override{
@@ -22,21 +26,34 @@ public:
         subscribe_json(command_topic, &MqttClient::on_command);
     }
 
-    void loop() override{
-        if(!_payload_storage->get_incoming_messages_queue().empty()){
-            Payload p = _payload_storage->get_incoming_messages_queue().pop();
-            const std::string topic = build_state_topic(p.get_device_id());
-            const std::string payload = build_state_payload(p);
+    void send(const Payload& p){
+        const std::string topic = build_state_topic(p.get_device_id());
+        const std::string payload = build_state_payload(p);
 
-            ESP_LOGI(__FUNCTION__, "Sending message to MQTT broker... topic=[%s]. payload=[%s]", topic.c_str(), payload.c_str());
+        ESP_LOGI(__FUNCTION__, "Sending message to MQTT broker... topic=[%s]. payload=[%s]", topic.c_str(), payload.c_str());
 
-            if(publish(topic, payload)){
-                ESP_LOGI(__FUNCTION__, "MQTT message published!");
-            } else {
-                ESP_LOGW(__FUNCTION__, "MQTT message publish failed!");
-            }
+        if(publish(topic, payload)){
+            ESP_LOGI(__FUNCTION__, "MQTT message published!");
+        } else {
+            ESP_LOGW(__FUNCTION__, "MQTT message publish failed!");
         }
     }
+
+    // void loop() override{
+    //     if(!_payload_storage->get_incoming_messages_queue().empty()){
+    //         Payload p = _payload_storage->get_incoming_messages_queue().pop();
+    //         const std::string topic = build_state_topic(p.get_device_id());
+    //         const std::string payload = build_state_payload(p);
+
+    //         ESP_LOGI(__FUNCTION__, "Sending message to MQTT broker... topic=[%s]. payload=[%s]", topic.c_str(), payload.c_str());
+
+    //         if(publish(topic, payload)){
+    //             ESP_LOGI(__FUNCTION__, "MQTT message published!");
+    //         } else {
+    //             ESP_LOGW(__FUNCTION__, "MQTT message publish failed!");
+    //         }
+    //     }
+    // }
 
     std::string build_state_topic(const uint16_t sender_id) const {
         return _topic_base + "/" + _topic_state + "/" + esphome::to_string(sender_id);
@@ -81,11 +98,13 @@ public:
         p.set_device_id(root["targetId"]);
         p.set_raw(root["raw"]);
 
-        _payload_storage->get_outcoming_messages_queue().push(p);
+        rfm69sender(p);
+        //_payload_storage->get_outcoming_messages_queue().push(p);
     }
 
 private:
-    PayloadStorage *_payload_storage = nullptr;
+    //PayloadStorage *_payload_storage = nullptr;
+    std::function<void(const Payload&)> rfm69sender = nullptr;
 
     std::string _topic_base = "rf_mqtt_bridge";
     std::string _topic_state = "state";

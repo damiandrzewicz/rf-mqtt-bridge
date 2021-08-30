@@ -43,13 +43,18 @@ ota:
 
 custom_component:
 - lambda: |-
-    auto payload_storage = new PayloadStorage();
-    App.register_component(payload_storage);
+    //auto payload_storage = new PayloadStorage();
+    //App.register_component(payload_storage);
 
-    auto rfm69_manager = new RFM69Manager(payload_storage);
+    using namespace std::placeholders;
+
+    auto mqtt_client = new MqttClient();
+    auto rfm69_manager = new RFM69Manager();
+
+    mqtt_client->setRfm69Sender(std::bind(&RFM69Manager::send, rfm69_manager, _1));
+    rfm69_manager->setMqttSender(std::bind(&MqttClient::send, mqtt_client, _1));
+
+    App.register_component(mqtt_client);
     App.register_component(rfm69_manager);
 
-    auto mqtt_client = new MqttClient(payload_storage);
-    App.register_component(mqtt_client);
-
-    return {{payload_storage, rfm69_manager, mqtt_client}};
+    return {{mqtt_client, rfm69_manager}};
